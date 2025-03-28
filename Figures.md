@@ -25,6 +25,27 @@ graph TD
     Transformer --> AttentionLoss
 ```
 
+### Overall Architecture (English)
+
+```mermaid
+graph TD
+    Input[Input Data] --> Embedding[Embedding Layer]
+    Embedding --> Transformer[Transformer Block]
+    Transformer --> |Recurrent|Transformer
+    Transformer --> Decoder[Decoder Head]
+    Decoder --> Output[Prediction Output]
+    
+    subgraph Loss Functions
+    CE[Cross Entropy Loss]
+    ConstraintLoss[Constraint Loss L_sudoku]
+    AttentionLoss[Attention Constraint L_attention]
+    end
+    
+    Output --> CE
+    Transformer --> ConstraintLoss
+    Transformer --> AttentionLoss
+```
+
 ### Transformer块的详细结构
 
 ```mermaid
@@ -38,6 +59,21 @@ graph TD
     Add1 --> Add2[残差连接]
     MLP --> Add2
     Add2 --> Out[输出]
+```
+
+### Transformer Block Structure (English)
+
+```mermaid
+graph TD
+    In[Input] --> LN1[Layer Norm 1]
+    LN1 --> Attention[Self-Attention]
+    In --> Add1[Residual Connection]
+    Attention --> Add1
+    Add1 --> LN2[Layer Norm 2]
+    LN2 --> MLP[Feed-Forward Network]
+    Add1 --> Add2[Residual Connection]
+    MLP --> Add2
+    Add2 --> Out[Output]
 ```
 
 ### 自注意力机制
@@ -64,6 +100,30 @@ graph TD
     Attention_Matrix --> |用于约束损失| AttLoss[注意力约束]
 ```
 
+### Self-Attention Mechanism (English)
+
+```mermaid
+graph TD
+    X[Input X] --> Q[Query Transform]
+    X --> K[Key Transform]
+    X --> V[Value Transform]
+    Q --> QK[Q·K^T]
+    K --> QK
+    QK --> Scale[Scaling]
+    Scale --> SM[Softmax]
+    SM --> AV[Attention·Value]
+    V --> AV
+    AV --> Out[Output]
+    
+    subgraph Attention_Matrix
+    QK
+    Scale
+    SM
+    end
+    
+    Attention_Matrix --> |For constraint loss| AttLoss[Attention Constraint]
+```
+
 ### 递归结构
 
 ```mermaid
@@ -72,6 +132,19 @@ graph LR
     T1 --> T1_out[中间输出]
     T1_out --> |递归1|T1
     T1 --> T1_final[最终输出]
+    
+    style T1_out stroke-dasharray: 5 5
+    style T1_final stroke-width:4px
+```
+
+### Recurrent Structure (English)
+
+```mermaid
+graph LR
+    Input[Input] --> T1[Transformer Layer]
+    T1 --> T1_out[Intermediate Output]
+    T1_out --> |Recurrent 1|T1
+    T1 --> T1_final[Final Output]
     
     style T1_out stroke-dasharray: 5 5
     style T1_final stroke-width:4px
@@ -92,6 +165,20 @@ graph TD
 **说明：** 
 - 上面的路径(A→B→C)代表前向传播，执行二值化操作
 - 下面的路径(A→D→E)代表反向传播，直接传递梯度
+
+### STE (Straight-Through Estimator) Principle (English)
+
+```mermaid
+graph TD
+    A[Input] --> B[Binarization Function]
+    B --> C[Output]
+    A --> D[Identity Function]
+    D --> E[Gradient]
+```
+
+**Note:** 
+- The upper path (A→B→C) represents forward propagation, performing binarization
+- The lower path (A→D→E) represents backward propagation, directly passing gradients
 
 ### 二值化函数实现
 
@@ -120,6 +207,33 @@ graph TD
 - binarize函数: 当x≥0时输出1，否则输出-1
 - 这三个类通过PyTorch的autograd.Function实现STE，在前向传播时执行离散操作，反向传播时保持梯度流动
 
+### Binarization Function Implementation (English)
+
+```mermaid
+graph TD
+    X[Input] --> BP[bp function]
+    X --> B[binarize function]
+    
+    subgraph STE Implementation
+    D1[Disc class]
+    D2[DiscBi class]
+    D3[DiscBs class]
+    end
+    
+    BP --> D1
+    B --> D2
+    B --> D3
+    
+    D1 --> G1[Gradient output]
+    D2 --> G2[Gradient output]
+    D3 --> G3[Gradient clipping]
+```
+
+**Note:**
+- bp function: outputs 1 if x≥0.5, otherwise 0
+- binarize function: outputs 1 if x≥0, otherwise -1
+- These three classes implement STE through PyTorch's autograd.Function, performing discrete operations in forward pass while maintaining gradient flow in backward pass
+
 ## 数据流
 
 ### 数据处理流程
@@ -130,6 +244,16 @@ flowchart TD
     Parse --> Tensor[转换为Tensor]
     Tensor --> BatchProcessing[批处理]
     BatchProcessing --> Model[模型输入]
+```
+
+### Data Processing Flow (English)
+
+```mermaid
+graph TD
+    Data[Raw Data] --> Parse[Parse Data]
+    Parse --> Tensor[Convert to Tensor]
+    Tensor --> BatchProcessing[Batch Processing]
+    BatchProcessing --> Model[Model Input]
 ```
 
 ### 数独数据表示
@@ -144,6 +268,18 @@ graph TD
     Probs --> Loss["约束损失"]
 ```
 
+### Sudoku Data Representation (English)
+
+```mermaid
+graph TD
+    Sudoku[Sudoku Problem] --> |Parse| Grid["9x9 Grid"]
+    Grid --> |Flatten| Vector["81-dim Vector"]
+    Vector --> |Embedding| Embedding["81x128-dim Vector"]
+    
+    Grid --> |Possible values for each position| Probs["81x9 Probability Distribution"]
+    Probs --> Loss["Constraint Loss"]
+```
+
 ### 视觉数独处理流程
 
 ```mermaid
@@ -153,6 +289,17 @@ flowchart TD
     Features --> Transformer[Transformer模型]
     Transformer --> Predictor[预测器]
     Predictor --> Solution[数独解]
+```
+
+### Visual Sudoku Processing Flow (English)
+
+```mermaid
+graph TD
+    DigitImages[Digit Images] --> |MNIST format| CNN[CNN Encoder]
+    CNN --> Features[Feature Vectors]
+    Features --> Transformer[Transformer Model]
+    Transformer --> Predictor[Predictor]
+    Predictor --> Solution[Sudoku Solution]
 ```
 
 ### 训练数据流程
@@ -168,6 +315,19 @@ flowchart TD
     Update --> DataLoader
 ```
 
+### Training Data Flow (English)
+
+```mermaid
+graph TD
+    Train[Training Data] --> DataLoader[Data Loader]
+    DataLoader --> Model[Model]
+    Model --> Forward[Forward Propagation]
+    Forward --> Loss[Loss Calculation]
+    Loss --> Backward[Backward Propagation]
+    Backward --> Update[Parameter Update]
+    Update --> DataLoader
+```
+
 ### 半监督学习数据流
 
 ```mermaid
@@ -180,6 +340,18 @@ flowchart TD
     Model --> UnsupervisedLoss[无监督约束损失]
 ```
 
+### Semi-supervised Learning Data Flow (English)
+
+```mermaid
+graph TD
+    LabeledData[Labeled Data] --> LB[Labeled Batch]
+    UnlabeledData[Unlabeled Data] --> ULB[Unlabeled Batch]
+    LB --> Model[Model]
+    ULB --> Model
+    Model --> SupervisedLoss[Supervised Loss]
+    Model --> UnsupervisedLoss[Unsupervised Constraint Loss]
+```
+
 ## 约束满足问题解决方法
 
 ```mermaid
@@ -190,6 +362,18 @@ graph TD
     Learning --> ConstraintLearning[约束学习]
     ConstraintLearning --> STE[Straight-Through Estimator]
     ConstraintLearning --> Differentiable[可微分约束]
+```
+
+### Constraint Satisfaction Problem Solving Methods (English)
+
+```mermaid
+graph TD
+    CSP[Constraint Satisfaction Problem] --> |Traditional Methods| Search[Search Algorithms]
+    CSP --> |Neural Methods| Learning[Neural Network Learning]
+    Learning --> EndToEnd[End-to-End Learning]
+    Learning --> ConstraintLearning[Constraint Learning]
+    ConstraintLearning --> STE[Straight-Through Estimator]
+    ConstraintLearning --> Differentiable[Differentiable Constraints]
 ```
 
 ## 约束损失函数
@@ -211,6 +395,23 @@ graph TD
     Existence --> Reg
 ```
 
+### Sudoku Constraints (English)
+
+```mermaid
+graph TD
+    P[Prediction Probabilities] --> Row[Row Constraints]
+    P --> Col[Column Constraints]
+    P --> Box[3x3 Box Constraints]
+    Row --> Uniqueness[Uniqueness Constraints]
+    Col --> Uniqueness
+    Box --> Uniqueness
+    Row --> Existence[Existence Constraints]
+    Col --> Existence
+    Box --> Existence
+    Uniqueness --> Reg[Regularization Term]
+    Existence --> Reg
+```
+
 ### 数独约束矩阵表示
 
 ```mermaid
@@ -220,6 +421,19 @@ graph TD
     Reshape --> ColSum["列求和约束"]
     Reshape --> BoxSum["3x3盒求和约束"]
     RowSum --> Cardinality["基数约束(Sum=1)"]
+    ColSum --> Cardinality
+    BoxSum --> Cardinality
+```
+
+### Sudoku Constraint Matrix Representation (English)
+
+```mermaid
+graph TD
+    Probs["Probability Distribution (batch_size, 81, 9)"] --> Reshape["Reshape to (batch_size, 9, 9, 9)"]
+    Reshape --> RowSum["Row Sum Constraint"]
+    Reshape --> ColSum["Column Sum Constraint"]
+    Reshape --> BoxSum["3x3 Box Sum Constraint"]
+    RowSum --> Cardinality["Cardinality Constraint (Sum=1)"]
     ColSum --> Cardinality
     BoxSum --> Cardinality
 ```
@@ -234,6 +448,16 @@ graph TD
     Sum --> Card[基数约束为1]
 ```
 
+### Attention Constraints (English)
+
+```mermaid
+graph TD
+    A[Attention Matrix] --> SoftMax[Softmax]
+    SoftMax --> |Establish relationships between related cells|Mask[Mask Filtering]
+    Mask --> Sum[Summation]
+    Sum --> Card[Cardinality Constraint = 1]
+```
+
 ### 注意力矩阵的约束实现
 
 ```mermaid
@@ -242,6 +466,17 @@ flowchart TD
     A --> |乘法| Masked["掩码注意力"]
     AdjacentMatrix --> Masked
     Masked --> |每行求和| RowSum["行和 (batch*heads, 81, 1)"]
+    RowSum --> RegCard["reg_cardinality(RowSum, 1)"]
+```
+
+### Attention Matrix Constraint Implementation (English)
+
+```mermaid
+graph TD
+    A["Attention Matrix (batch*heads, 81, 81)"] --> AdjacentMatrix["Adjacency Matrix A_adj (81, 81)"]
+    A --> |Multiplication| Masked["Masked Attention"]
+    AdjacentMatrix --> Masked
+    Masked --> |Sum each row| RowSum["Row Sum (batch*heads, 81, 1)"]
     RowSum --> RegCard["reg_cardinality(RowSum, 1)"]
 ```
 
@@ -262,6 +497,23 @@ sequenceDiagram
     O->>M: 更新参数
 ```
 
+### Training Process (English)
+
+```mermaid
+sequenceDiagram
+    participant D as Dataset
+    participant M as Model
+    participant L as Loss Functions
+    participant O as Optimizer
+    
+    D->>M: Batch Data
+    M->>M: Forward Pass (Recurrent Transformer)
+    M->>L: Calculate Cross Entropy Loss
+    M->>L: Calculate Constraint Loss
+    L->>O: Total Loss
+    O->>M: Update Parameters
+```
+
 ## 实验流程
 
 ```mermaid
@@ -270,6 +522,16 @@ graph TD
     Train --> Eval[评估模型]
     Eval --> Log[记录结果]
     Log --> Visualization[可视化]
+```
+
+### Experiment Process (English)
+
+```mermaid
+graph TD
+    Setup[Experiment Setup] --> Train[Train Model]
+    Train --> Eval[Evaluate Model]
+    Eval --> Log[Log Results]
+    Log --> Visualization[Visualization]
 ```
 
 ## 模型评估
@@ -281,6 +543,17 @@ flowchart TD
     Output --> Metrics[评估指标]
     Metrics --> BoardAcc[棋盘准确率]
     Metrics --> CellAcc[单元格准确率]
+```
+
+### Model Evaluation (English)
+
+```mermaid
+graph TD
+    TestData[Test Data] --> Model[Model]
+    Model --> Output[Output Predictions]
+    Output --> Metrics[Evaluation Metrics]
+    Metrics --> BoardAcc[Board Accuracy]
+    Metrics --> CellAcc[Cell Accuracy]
 ```
 
 ## 模型评估详细流程
@@ -297,7 +570,72 @@ flowchart TD
     Eval --> VisualizeMaps[可视化注意力图]
 ```
 
+### Detailed Model Evaluation Process (English)
+
+```mermaid
+graph TD
+    TestDataset[Test Dataset] --> TestLoader[Test Data Loader]
+    TestLoader --> TestNN[testNN Function]
+    TestLoader --> TestNNTrick[testNN_trick Function]
+    TestNN --> Eval[Model Evaluation]
+    TestNNTrick --> Eval
+    Eval --> BoardAccuracy[Board Accuracy]
+    Eval --> CellAccuracy[Cell Accuracy]
+    Eval --> VisualizeMaps[Visualize Attention Maps]
+```
+
 ## 模型组件关系
+
+```mermaid
+classDiagram
+    class GPTConfig {
+        +vocab_size
+        +block_size
+        +causal_mask
+        +losses
+        +n_recur
+    }
+    
+    class GPT {
+        +tok_emb
+        +pos_emb
+        +blocks
+        +ln_f
+        +head
+        +forward()
+    }
+    
+    class Block {
+        +ln1
+        +ln2
+        +attn
+        +mlp
+        +forward()
+    }
+    
+    class CausalSelfAttention {
+        +key
+        +query
+        +value
+        +proj
+        +forward()
+    }
+    
+    class Trainer {
+        +model
+        +train_dataset
+        +test_dataset
+        +config
+        +train()
+    }
+    
+    GPTConfig <|-- GPT
+    GPT *-- Block
+    Block *-- CausalSelfAttention
+    Trainer o-- GPT
+```
+
+### Model Component Relationships (English)
 
 ```mermaid
 classDiagram
@@ -359,6 +697,17 @@ graph TD
     Learning --> Solution[问题解决方案]
 ```
 
+### Recursion and Constraint Collaboration (English)
+
+```mermaid
+graph TD
+    Recursion[Recursion Mechanism] --> Refinement[Problem Solving Iterative Refinement]
+    Constraints[Constraint Mechanism] --> Structure[Problem Structure Prior]
+    Refinement --> Learning[End-to-End Learning]
+    Structure --> Learning
+    Learning --> Solution[Problem Solution]
+```
+
 ## 推理过程
 
 ```mermaid
@@ -368,6 +717,17 @@ flowchart TD
     Predict --> |置信度最高的空格| Fill[填充一个格子]
     Fill --> |仍有空格| Model
     Fill --> |所有格子已填| Complete[完成]
+```
+
+### Inference Process (English)
+
+```mermaid
+graph TD
+    Input[Incomplete Input Data] --> Model[Model]
+    Model --> Predict[Prediction]
+    Predict --> |Highest confidence cell| Fill[Fill One Cell]
+    Fill --> |Empty cells remain| Model
+    Fill --> |All cells filled| Complete[Complete]
 ```
 
 ## 推理算法细节
@@ -383,4 +743,19 @@ flowchart TD
     FindMax --> FillPosition["填充该位置"]
     FillPosition --> |仍有空格| Loop
     FillPosition --> |无空格| Output["输出完整解"]
+```
+
+### Inference Algorithm Details (English)
+
+```mermaid
+graph TD
+    Input["Input X (batch_size, 81)"] --> Clone["Clone X"]
+    Clone --> Loop["Loop until all cells filled"]
+    Loop --> ModelPred["Model Prediction (batch_size, 81, 9)"]
+    ModelPred --> Probs["Convert to Probabilities"]
+    Probs --> MaskFilled["Mask Filled Cells"]
+    MaskFilled --> FindMax["Find Max Probability Position"]
+    FindMax --> FillPosition["Fill Position"]
+    FillPosition --> |Empty cells remain| Loop
+    FillPosition --> |No empty cells| Output["Output Complete Solution"]
 ```
