@@ -1,4 +1,3 @@
-
 # Recurrent Transformer 实现分析
 
 本项目实现了一个递归Transformer架构，用于解决约束满足问题，特别是数独游戏。下面通过多个图表分析项目的核心实现细节。
@@ -84,33 +83,42 @@ graph LR
 
 ```mermaid
 graph TD
-    Input[输入 x] --> |前向| Binary[二值化函数 b(x)]
-    Binary --> |0或1| Output[输出]
-    Input --> |反向| Identity[恒等函数]
-    Identity --> |梯度不变| Gradient[梯度∇L]
+    A[输入] --> B[二值化函数]
+    B --> C[输出]
+    A --> D[恒等函数]
+    D --> E[梯度]
 ```
+
+**说明：** 
+- 上面的路径(A→B→C)代表前向传播，执行二值化操作
+- 下面的路径(A→D→E)代表反向传播，直接传递梯度
 
 ### 二值化函数实现
 
 ```mermaid
-flowchart TD
-    X[输入x] --> BP["bp(x) = x>=0.5 ? 1 : 0"]
-    X --> B["binarize(x) = x>=0 ? 1 : -1"]
+graph TD
+    X[输入] --> BP[bp函数]
+    X --> B[binarize函数]
     
-    subgraph "STE实现类"
-    Disc["class Disc(torch.autograd.Function)"]
-    DiscBi["class DiscBi(torch.autograd.Function)"]
-    DiscBs["class DiscBs(torch.autograd.Function)"]
+    subgraph STE实现
+    D1[Disc类]
+    D2[DiscBi类]
+    D3[DiscBs类]
     end
     
-    BP -->|前向| Disc
-    B -->|前向| DiscBi
-    B -->|前向| DiscBs
+    BP --> D1
+    B --> D2
+    B --> D3
     
-    Disc -->|反向| Identity1["grad_output"]
-    DiscBi -->|反向| Identity2["grad_output"]
-    DiscBs -->|反向| Clipped["sSTE(grad_output, x)"]
+    D1 --> G1[梯度输出]
+    D2 --> G2[梯度输出]
+    D3 --> G3[梯度裁剪]
 ```
+
+**说明：**
+- bp函数: 当x≥0.5时输出1，否则输出0
+- binarize函数: 当x≥0时输出1，否则输出-1
+- 这三个类通过PyTorch的autograd.Function实现STE，在前向传播时执行离散操作，反向传播时保持梯度流动
 
 ## 数据流
 
