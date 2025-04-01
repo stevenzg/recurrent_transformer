@@ -1,5 +1,7 @@
 import sys
-sys.path.append('..')
+import os
+# Add the project root directory to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import argparse
 import torch
@@ -8,7 +10,6 @@ import matplotlib.pyplot as plt
 import wandb
 
 from mingpt.model import GPT, GPTConfig
-from digit_conv import DigitConv
 from network import inference_trick
 
 def load_model_from_wandb():
@@ -28,11 +29,10 @@ def load_model_from_wandb():
     # Create model structure (same as training)
     mconf = GPTConfig(vocab_size=10, block_size=81, n_layer=1, n_head=4, n_embd=128, 
                     num_classes=9, causal_mask=False, losses=[], n_recur=32, all_layers=True,
-                    tok_emb=DigitConv, hyper=[1, 0.1])
+                    hyper=[1, 0.1])
     model = GPT(mconf)
     
     # Find model file
-    import os
     model_files = [f for f in os.listdir(artifact_dir) if f.endswith('.pt')]
     if not model_files:
         raise FileNotFoundError(f"No model file (.pt) found in {artifact_dir}")
