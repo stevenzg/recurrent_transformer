@@ -3,6 +3,7 @@ sys.path.append('..')
 
 import argparse
 import torch
+import re
 
 from dataset import Sudoku_Dataset, Sudoku_Dataset_Palm, Sudoku_Dataset_SATNet
 from network import testNN
@@ -105,7 +106,15 @@ def main(args):
     # Save model to wandb if enabled
     if args.wandb:
         # Create a valid artifact name by replacing invalid characters
-        artifact_name = prefix[:-1].replace('[', '').replace(']', '').replace(',', '-')
+        # Only allow alphanumeric characters, dashes, underscores, and dots
+        artifact_name = prefix[:-1]
+        # Replace special characters with underscore
+        artifact_name = re.sub(r'[^\w\-\.]', '_', artifact_name)
+        # Remove consecutive underscores
+        artifact_name = re.sub(r'_+', '_', artifact_name)
+        # Remove leading/trailing underscores
+        artifact_name = artifact_name.strip('_')
+        print(f"Using artifact name: model-{artifact_name}")
         
         # Save model state dict
         model_path = f'model_{artifact_name}.pt'

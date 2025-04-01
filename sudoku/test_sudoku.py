@@ -23,7 +23,7 @@ def load_model_from_wandb():
     run = wandb.init()
     
     # Use the artifact
-    artifact = run.use_artifact('agir/transformer-ste-sudoku/model-satnet-9kL1R32H4:v0', type='model')
+    artifact = run.use_artifact('agir/transformer-ste-sudoku/model-satnet_9k_att_c1-c1_0.5-0.5_L1R32H4:v0', type='model')
     artifact_dir = artifact.download()
     
     # Create model structure (same as training)
