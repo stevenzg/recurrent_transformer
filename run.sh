@@ -38,6 +38,16 @@ echo ""
 echo "0) Quit"
 echo ""
 
+# Ask for global wandb option
+read -p "Enable wandb logging for this run? (y/n) [default: n]: " use_wandb
+use_wandb=${use_wandb:-n}
+
+wandb_arg=""
+if [[ "$use_wandb" == "y" ]]; then
+    wandb_arg="--wandb"
+    echo "Wandb logging enabled."
+fi
+
 # Ask for user choice
 read -p "Enter your choice (0-6): " choice
 
@@ -71,8 +81,8 @@ case $choice in
         epochs=${epochs:-10}
         
         cd sudoku
-        echo "Running: python main.py --all_layers --n_layer 1 --n_recur 32 --n_head 4 --epochs $epochs --eval_interval 1 --lr 0.001 --dataset $dataset $loss_args"
-        python main.py --all_layers --n_layer 1 --n_recur 32 --n_head 4 --epochs $epochs --eval_interval 1 --lr 0.001 --dataset $dataset $loss_args
+        echo "Running: python main.py --all_layers --n_layer 1 --n_recur 32 --n_head 4 --epochs $epochs --eval_interval 1 --lr 0.001 --dataset $dataset $loss_args $wandb_arg"
+        python main.py --all_layers --n_layer 1 --n_recur 32 --n_head 4 --epochs $epochs --eval_interval 1 --lr 0.001 --dataset $dataset $loss_args $wandb_arg
         ;;
         
     2)
@@ -104,8 +114,8 @@ case $choice in
         epochs=${epochs:-10}
         
         cd visual_sudoku
-        echo "Running: python main.py --all_layers --n_layer 1 --n_recur 32 --n_head 4 --epochs $epochs --eval_interval 1 --lr 0.001 --dataset $dataset $loss_args"
-        python main.py --all_layers --n_layer 1 --n_recur 32 --n_head 4 --epochs $epochs --eval_interval 1 --lr 0.001 --dataset $dataset $loss_args
+        echo "Running: python main.py --all_layers --n_layer 1 --n_recur 32 --n_head 4 --epochs $epochs --eval_interval 1 --lr 0.001 --dataset $dataset $loss_args $wandb_arg"
+        python main.py --all_layers --n_layer 1 --n_recur 32 --n_head 4 --epochs $epochs --eval_interval 1 --lr 0.001 --dataset $dataset $loss_args $wandb_arg
         ;;
         
     3)
@@ -114,8 +124,8 @@ case $choice in
         dataset=${dataset:-easy}
         
         cd sudoku_16
-        echo "Running: python main.py --dataset $dataset"
-        python main.py --dataset $dataset
+        echo "Running: python main.py --dataset $dataset $wandb_arg"
+        python main.py --dataset $dataset $wandb_arg
         ;;
         
     4)
@@ -132,8 +142,8 @@ case $choice in
         fi
         
         cd shortest_path
-        echo "Running: python main.py --grid_size $grid_size $loss_args"
-        python main.py --grid_size $grid_size $loss_args
+        echo "Running: python main.py --grid_size $grid_size $loss_args $wandb_arg"
+        python main.py --grid_size $grid_size $loss_args $wandb_arg
         ;;
         
     5)
@@ -142,15 +152,15 @@ case $choice in
         game_size=${game_size:-7}
         
         cd nonogram
-        echo "Running: python main.py --game_size $game_size"
-        python main.py --game_size $game_size
+        echo "Running: python main.py --game_size $game_size $wandb_arg"
+        python main.py --game_size $game_size $wandb_arg
         ;;
         
     6)
         echo "=== Running MNIST Mapping Experiment ==="
         cd MNIST_mapping
-        echo "Running: python main.py"
-        python main.py
+        echo "Running: python main.py $wandb_arg"
+        python main.py $wandb_arg
         ;;
         
     0)
