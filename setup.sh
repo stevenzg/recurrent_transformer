@@ -22,6 +22,29 @@ echo "Installing required packages..."
 conda install -c anaconda tqdm numpy pandas -y
 conda install -c conda-forge matplotlib -y
 python3 -m pip install wandb
+
+# Setup wandb login
+echo "Setting up wandb..."
+read -p "Do you want to log in to wandb? (y/n) [default: n]: " do_wandb_login
+do_wandb_login=${do_wandb_login:-n}
+
+if [[ "$do_wandb_login" == "y" ]]; then
+    echo "Please enter your wandb API key (or press Enter to open browser login):"
+    read -p "API Key: " wandb_api_key
+    
+    if [[ -z "$wandb_api_key" ]]; then
+        # No API key provided, use browser login
+        wandb login
+    else
+        # Use provided API key
+        wandb login "$wandb_api_key"
+    fi
+    
+    echo "wandb login completed."
+else
+    echo "Skipping wandb login. You can manually run 'wandb login' later if needed."
+fi
+
 # Install PyTorch for CPU only
 conda install pytorch torchvision torchaudio cpuonly -c pytorch -y
 
