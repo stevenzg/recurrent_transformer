@@ -102,6 +102,28 @@ def main(args):
     print('Total and single accuracy are the board and cell accuracy respectively.')
     print_result(result)
 
+    # Save model to wandb if enabled
+    if args.wandb:
+        # Create a valid artifact name by replacing invalid characters
+        artifact_name = prefix[:-1].replace('[', '').replace(']', '').replace(',', '-')
+        
+        # Save model state dict
+        model_path = f'model_{artifact_name}.pt'
+        torch.save(model.state_dict(), model_path)
+        
+        # Log model as artifact
+        artifact = wandb.Artifact(
+            name=f'model-{artifact_name}',
+            type='model',
+            description=f'Model trained on {args.dataset} dataset with {args.n_train} samples'
+        )
+        artifact.add_file(model_path)
+        wandb.log_artifact(artifact)
+        
+        # Clean up local file
+        import os
+        os.remove(model_path)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

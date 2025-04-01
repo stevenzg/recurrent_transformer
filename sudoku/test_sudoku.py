@@ -23,7 +23,7 @@ def load_model_from_wandb():
     run = wandb.init()
     
     # Use the artifact
-    artifact = run.use_artifact('agir/transformer-ste-sudoku/job-git_github.com_stevenzg_recurrent_transformer.git_sudoku_main.py:v0', type='job')
+    artifact = run.use_artifact('agir/transformer-ste-sudoku/model-satnet-9kL1R32H4:v0', type='model')
     artifact_dir = artifact.download()
     
     # Create model structure (same as training)
