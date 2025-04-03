@@ -108,11 +108,18 @@ case $choice in
         read -p "Number of epochs [default: 10]: " epochs
         epochs=${epochs:-10}
         
+        # Allow setting model architecture parameters
+        read -p "Number of layers [default: 1]: " n_layer
+        n_layer=${n_layer:-1}
+        
+        read -p "Number of recurrent steps [default: 32]: " n_recur
+        n_recur=${n_recur:-32}
+        
+        read -p "Number of attention heads [default: 4]: " n_head
+        n_head=${n_head:-4}
+        
         # Save parameters for future runs
         mkdir -p ./sudoku
-        n_layer=1
-        n_recur=32
-        n_head=4
         eval_interval=1
         lr=0.001
         
