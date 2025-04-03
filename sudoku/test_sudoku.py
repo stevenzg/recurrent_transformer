@@ -49,6 +49,77 @@ def load_model_from_wandb():
     
     return model
 
+def solve_sudoku_with_process(model, sudoku_input):
+    """
+    Solve a Sudoku puzzle using the trained model and show the solving process
+    
+    Args:
+        model: The loaded GPT model
+        sudoku_input: Sudoku input (9x9 array, 0 for empty cells, 1-9 for filled cells)
+    
+    Returns:
+        solution: Solved Sudoku (9x9 array)
+        probabilities: Probabilities for each cell (9x9x9 array)
+    """
+    # Convert input to the correct format
+    device = next(model.parameters()).device
+    X = torch.tensor(sudoku_input).view(1, 81).to(device)
+    
+    # Forward pass through the model to get logits
+    with torch.no_grad():
+        logits, _, _ = model(X)
+    
+    # Get probabilities using softmax
+    probs = torch.nn.functional.softmax(logits, dim=-1)
+    probs = probs.cpu().numpy()[0].reshape(9, 9, 9)  # shape: (9, 9, 9) for row, col, digit
+    
+    # Use inference_trick to solve the Sudoku (same as before)
+    with torch.no_grad():
+        pred = inference_trick(model, X)
+    
+    # Convert 0-8 indices to 1-9 numbers
+    solution = pred.cpu().numpy()[0].reshape(9, 9) + 1
+    
+    # Print solving process
+    print("\n=== Solving Process ===")
+    empty_cells = []
+    for r in range(9):
+        for c in range(9):
+            if sudoku_input[r][c] == 0:
+                empty_cells.append((r, c))
+    
+    print(f"Found {len(empty_cells)} empty cells to solve")
+    
+    for r, c in empty_cells:
+        print(f"\nPosition: Row {r+1}, Column {c+1}")
+        print("Probabilities for each digit (1-9):")
+        
+        # Find the digit with highest probability
+        max_prob_digit = np.argmax(probs[r, c]) + 1
+        
+        for digit in range(9):
+            prob_percent = probs[r, c, digit] * 100
+            bar_length = int(prob_percent / 5)  # Scale for display
+            bar = '█' * bar_length + '░' * (20 - bar_length)
+            confidence = "HIGH" if prob_percent > 90 else "MEDIUM" if prob_percent > 50 else "LOW"
+            
+            # Mark the highest probability digit
+            highlight = "← HIGHEST" if (digit + 1) == max_prob_digit else ""
+            print(f"  {digit+1}: {bar} {prob_percent:.2f}% ({confidence}) {highlight}")
+        
+        # Show the model's final choice
+        chosen_digit = int(solution[r, c])
+        print(f"Single-cell prediction: {max_prob_digit}")
+        print(f"Final model choice after global inference: {chosen_digit}")
+        
+        # Explain if there's a discrepancy
+        if max_prob_digit != chosen_digit:
+            print("Note: The final choice differs from the highest probability because inference_trick")
+            print("      considers global sudoku constraints across the entire puzzle, not just")
+            print("      individual cell probabilities.")
+    
+    return solution, probs
+
 def solve_sudoku(model, sudoku_input):
     """
     Solve a Sudoku puzzle using the trained model
@@ -118,6 +189,41 @@ def visualize_sudoku(input_sudoku, solved_sudoku):
     print(f"Solution saved as 'sudoku_solution.png'")
     plt.show()
 
+def visualize_cell_probabilities(input_sudoku, probs, row, col):
+    """
+    Visualize probabilities for a specific cell
+    
+    Args:
+        input_sudoku: Original Sudoku puzzle
+        probs: Probabilities from the model (9x9x9)
+        row, col: Cell position to visualize
+    """
+    plt.figure(figsize=(8, 5))
+    
+    # Plot probabilities as a bar chart
+    digits = range(1, 10)
+    cell_probs = probs[row, col] * 100
+    
+    bars = plt.bar(digits, cell_probs)
+    
+    # Color the highest probability bar differently
+    max_idx = np.argmax(cell_probs)
+    bars[max_idx].set_color('red')
+    
+    plt.title(f'Probabilities for Row {row+1}, Column {col+1}')
+    plt.xlabel('Digit')
+    plt.ylabel('Probability (%)')
+    plt.xticks(digits)
+    plt.ylim(0, 100)
+    
+    # Add probability values on top of bars
+    for i, v in enumerate(cell_probs):
+        plt.text(i+1, v+1, f'{v:.1f}%', ha='center')
+    
+    plt.tight_layout()
+    plt.savefig(f'cell_probs_r{row+1}c{col+1}.png')
+    print(f"Cell probabilities saved as 'cell_probs_r{row+1}c{col+1}.png'")
+
 def main():
     # Example Sudoku puzzle (0 for empty cells, 1-9 for filled cells)
     # This is a medium difficulty Sudoku puzzle
@@ -137,17 +243,43 @@ def main():
     print("Loading model from wandb...")
     model = load_model_from_wandb()
     
-    # Solve Sudoku
+    # Solve Sudoku with detailed process
     print("Solving Sudoku...")
-    solution = solve_sudoku(model, sample_sudoku)
+    solution, probs = solve_sudoku_with_process(model, sample_sudoku)
     
     # Print solution
-    print("\nSudoku Solution:")
+    print("\nFinal Sudoku Solution:")
     for row in solution:
         print(" ".join(map(str, [int(x) for x in row])))
     
-    # Visualize
+    # Visualize the full solution
     visualize_sudoku(sample_sudoku, solution)
+    
+    # Visualize probabilities for a few selected cells
+    # Find a few interesting empty cells (with different confidence levels)
+    empty_cells = []
+    for r in range(9):
+        for c in range(9):
+            if sample_sudoku[r][c] == 0:
+                empty_cells.append((r, c, np.max(probs[r, c])))
+    
+    # Sort by confidence and pick low, medium and high confidence examples
+    empty_cells.sort(key=lambda x: x[2])
+    
+    if empty_cells:
+        # Low confidence example
+        r, c, _ = empty_cells[0]
+        visualize_cell_probabilities(sample_sudoku, probs, r, c)
+        
+        # Medium confidence example (if available)
+        if len(empty_cells) > 10:
+            idx = len(empty_cells) // 2
+            r, c, _ = empty_cells[idx]
+            visualize_cell_probabilities(sample_sudoku, probs, r, c)
+        
+        # High confidence example
+        r, c, _ = empty_cells[-1]
+        visualize_cell_probabilities(sample_sudoku, probs, r, c)
 
 if __name__ == "__main__":
     main() 
