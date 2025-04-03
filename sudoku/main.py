@@ -4,6 +4,7 @@ sys.path.append('..')
 import argparse
 import torch
 import re
+import os
 
 from dataset import Sudoku_Dataset, Sudoku_Dataset_Palm, Sudoku_Dataset_SATNet
 from network import testNN
@@ -74,6 +75,25 @@ def main(args):
         hyper=args.hyper)
     model = GPT(mconf)
 
+    # Load model from wandb artifact if specified
+    if args.continue_from and args.wandb:
+        print(f"Loading model from wandb artifact: {args.continue_from}")
+        artifact = wandb.run.use_artifact(args.continue_from, type='model')
+        artifact_dir = artifact.download()
+        
+        # Find model file
+        model_files = [f for f in os.listdir(artifact_dir) if f.endswith('.pt')]
+        if not model_files:
+            raise FileNotFoundError(f"No model file (.pt) found in {artifact_dir}")
+        
+        model_path = os.path.join(artifact_dir, model_files[0])
+        print(f"Using model file: {model_path}")
+        
+        # Load model weights
+        state_dict = torch.load(model_path, map_location='cpu')
+        model.load_state_dict(state_dict)
+        print("Model loaded successfully. Continuing training...")
+
     if args.wandb: wandb.watch(model, log_freq=100)
     if args.heatmap: visualize_adjacency()
 
@@ -130,7 +150,6 @@ def main(args):
         wandb.log_artifact(artifact)
         
         # Clean up local file
-        import os
         os.remove(model_path)
 
 
@@ -163,6 +182,7 @@ if __name__ == '__main__':
     parser.add_argument('--wandb', default=False, action='store_true', help='save all logs on wandb')
     parser.add_argument('--heatmap', default=False, action='store_true', help='save all heatmaps in trainer.result')
     parser.add_argument('--comment', type=str, default='', help='Comment of the experiment')
+    parser.add_argument('--continue_from', type=str, default='', help='WandB artifact path to continue training from')
     args = parser.parse_args()
 
     # we do not log onto wandb in debug mode

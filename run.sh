@@ -54,6 +54,34 @@ read -p "Enter your choice (0-6): " choice
 case $choice in
     1)
         echo "=== Running Textual Sudoku Experiment ==="
+        
+        # Check if previous run parameters exist
+        param_file="./sudoku/last_run_params.txt"
+        continue_previous="n"
+        wandb_path=""
+        
+        if [ -f "$param_file" ]; then
+            echo "Found previous run parameters."
+            cat "$param_file"
+            read -p "Continue from previous run? (y/n) [default: n]: " continue_previous
+            continue_previous=${continue_previous:-n}
+            
+            if [[ "$continue_previous" == "y" ]]; then
+                # Source the parameters from the file
+                source "$param_file"
+                
+                # Ask for wandb artifact path
+                read -p "Enter wandb artifact path (e.g. 'agir/transformer-ste-sudoku/model-satnet_9k_att_c1-c1_0.5-0.5_L1R32H4:v1'): " wandb_path
+                
+                # Create continue training python command
+                cd sudoku
+                echo "Running: python main.py --all_layers --n_layer $n_layer --n_recur $n_recur --n_head $n_head --epochs $epochs --eval_interval $eval_interval --lr $lr --dataset $dataset $loss_args $wandb_arg --continue_from \"$wandb_path\""
+                python main.py --all_layers --n_layer $n_layer --n_recur $n_recur --n_head $n_head --epochs $epochs --eval_interval $eval_interval --lr $lr --dataset $dataset $loss_args $wandb_arg --continue_from "$wandb_path"
+                exit 0
+            fi
+        fi
+        
+        # If not continuing, proceed with new run
         read -p "Enter dataset (satnet/palm) [default: satnet]: " dataset
         dataset=${dataset:-satnet}
         
@@ -80,9 +108,30 @@ case $choice in
         read -p "Number of epochs [default: 10]: " epochs
         epochs=${epochs:-10}
         
+        # Save parameters for future runs
+        mkdir -p ./sudoku
+        n_layer=1
+        n_recur=32
+        n_head=4
+        eval_interval=1
+        lr=0.001
+        
+        # Save parameters to file
+        cat > "$param_file" << EOF
+# Last run parameters ($(date))
+dataset=$dataset
+epochs=$epochs
+n_layer=$n_layer
+n_recur=$n_recur
+n_head=$n_head
+eval_interval=$eval_interval
+lr=$lr
+loss_args="$loss_args"
+EOF
+        
         cd sudoku
-        echo "Running: python main.py --all_layers --n_layer 1 --n_recur 32 --n_head 4 --epochs $epochs --eval_interval 1 --lr 0.001 --dataset $dataset $loss_args $wandb_arg"
-        python main.py --all_layers --n_layer 1 --n_recur 32 --n_head 4 --epochs $epochs --eval_interval 1 --lr 0.001 --dataset $dataset $loss_args $wandb_arg
+        echo "Running: python main.py --all_layers --n_layer $n_layer --n_recur $n_recur --n_head $n_head --epochs $epochs --eval_interval $eval_interval --lr $lr --dataset $dataset $loss_args $wandb_arg"
+        python main.py --all_layers --n_layer $n_layer --n_recur $n_recur --n_head $n_head --epochs $epochs --eval_interval $eval_interval --lr $lr --dataset $dataset $loss_args $wandb_arg
         ;;
         
     2)

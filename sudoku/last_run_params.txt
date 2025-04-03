@@ -1,0 +1,9 @@
+# Last run parameters (2023-04-02)
+dataset=satnet
+epochs=10
+n_layer=1
+n_recur=32
+n_head=4
+eval_interval=1
+lr=0.001
+loss_args="--loss att_c1 c1 --hyper 0.5 0.5" 
