@@ -227,7 +227,7 @@ def visualize_cell_probabilities(input_sudoku, probs, row, col):
 def main():
     # Example Sudoku puzzle (0 for empty cells, 1-9 for filled cells)
     # This is a medium difficulty Sudoku puzzle
-    sample_sudoku = [
+    medium_sudoku = [
         [5, 3, 0, 0, 7, 0, 0, 0, 0],
         [6, 0, 0, 1, 9, 5, 0, 0, 0],
         [0, 9, 8, 0, 0, 0, 0, 6, 0],
@@ -239,13 +239,46 @@ def main():
         [0, 0, 0, 0, 8, 0, 0, 7, 9]
     ]
     
+    # Simpler Sudoku with fewer empty cells
+    simple_sudoku = [
+        [5, 3, 0, 0, 7, 0, 0, 0, 0],
+        [6, 0, 0, 1, 9, 5, 0, 0, 0],
+        [0, 9, 8, 0, 0, 0, 0, 6, 0],
+        [8, 0, 0, 0, 6, 0, 0, 0, 3],
+        [4, 0, 0, 8, 0, 3, 0, 0, 1],
+        [7, 0, 0, 0, 2, 0, 0, 0, 6],
+        [0, 6, 0, 0, 0, 0, 2, 8, 0],
+        [0, 0, 0, 4, 1, 9, 0, 0, 5],
+        [0, 0, 0, 0, 8, 0, 0, 0, 0]  # Simplified last row with more empty cells
+    ]
+    
+    # Even simpler Sudoku with most cells filled
+    very_simple_sudoku = [
+        [5, 3, 4, 6, 7, 8, 9, 1, 2],
+        [6, 7, 2, 1, 9, 5, 3, 4, 8],
+        [1, 9, 8, 3, 4, 2, 5, 6, 7],
+        [8, 5, 9, 7, 6, 1, 4, 2, 3],
+        [4, 2, 6, 8, 5, 3, 7, 9, 1],
+        [7, 1, 3, 9, 2, 4, 8, 5, 6],
+        [9, 6, 1, 5, 3, 7, 2, 8, 4],
+        [2, 8, 7, 4, 1, 9, 6, 3, 5],
+        [0, 0, 0, 0, 8, 0, 0, 7, 9]  # Only last row has empty cells
+    ]
+    
+    # Choose which puzzle to use (uncomment the one you want)
+    # sample_sudoku = medium_sudoku
+    # sample_sudoku = simple_sudoku
+    sample_sudoku = very_simple_sudoku
+    
     # Load model
     print("Loading model from wandb...")
     model = load_model_from_wandb()
     
-    # Solve Sudoku with detailed process
+    # Solve Sudoku with detailed proc
+    # ess
     print("Solving Sudoku...")
     solution, probs = solve_sudoku_with_process(model, sample_sudoku)
+
     
     # Print solution
     print("\nFinal Sudoku Solution:")
