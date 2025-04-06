@@ -23,12 +23,12 @@ def load_model_from_wandb():
     run = wandb.init()
     
     # Use the artifact
-    artifact = run.use_artifact('agir/transformer-ste-sudoku/model-satnet_9k_att_c1-c1_0.5-0.5_L1R32H4:v2', type='model')
+    artifact = run.use_artifact('agir/transformer-ste-sudoku/model-satnet_9k_att_c1-c1_0.5-0.5_L4R16H4:v7', type='model')
     artifact_dir = artifact.download()
     
     # Create model structure (same as training)
-    mconf = GPTConfig(vocab_size=10, block_size=81, n_layer=1, n_head=4, n_embd=128, 
-                    num_classes=9, causal_mask=False, losses=[], n_recur=32, all_layers=True,
+    mconf = GPTConfig(vocab_size=10, block_size=81, n_layer=4, n_head=4, n_embd=128, 
+                    num_classes=9, causal_mask=False, losses=[], n_recur=16, all_layers=True,
                     hyper=[1, 0.1])
     model = GPT(mconf)
     
