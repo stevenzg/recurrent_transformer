@@ -143,7 +143,7 @@ graph LR
 graph LR
     Input[Input] --> T1[Transformer Layer]
     T1 --> T1_out[Intermediate Output]
-    T1_out --> |Recurrent 1|T1
+    T1_out --> |Recurrent|T1
     T1 --> T1_final[Final Output]
     
     style T1_out stroke-dasharray: 5 5
